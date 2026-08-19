@@ -1,68 +1,72 @@
 package br.pucpr.planet;
 
-import br.pucpr.user.Theme;
+import br.pucpr.table.TableData;
+
 import java.util.ArrayList;
 
-public class PlanetasPrinter {
-  private static String formatName(String name) {
-    if (name == null || name.isEmpty()) {
-      return "NÃO INFORMADO";
-    }
-    if (name.length() > 20) {
-      name = name.substring(0, 17) + "...";
-    }
-    return name;
-  }
+public class PlanetasPrinter implements TableData {
 
-  private static String formatType(PlanetType type) {
-    return switch (type) {
-      case ROCK -> "Rochoso";
-      case GAS -> "Gasoso";
-      case ICE -> "Gelado";
-      case DWARF -> "Anão";
-    };
-  }
+    private final ArrayList<Planet> planets;
 
-  public void print(ArrayList<Planet> planets, boolean alignRight, Theme theme) {
-    if (planets == null || planets.isEmpty()) {
-      System.out.println("ERRO: Lista de usuários vazia ou nula.");
-      return;
+    public PlanetasPrinter(ArrayList<Planet> planets) {
+        this.planets = planets;
     }
-    final var borderChar = theme.getBorderChar();
 
-    // Borda superior e cabeçalho
-    final var BORDER_WIDTH = 86;
-    var sb = new StringBuilder();
-    sb.repeat(borderChar, BORDER_WIDTH).append("\n");
-    sb.append(
-        String.format(
-            "| %-20s | %-10s | %-15s | %-15s | %-10s |%n",
-            "Nome", "Diâmetro", "Dist. sol (km)", "Dist. sol (ua)", "Tipo"));
-    sb.repeat(borderChar, BORDER_WIDTH).append("\n");
-    for (var planet : planets) {
-      if (planet == null) {
-        continue;
-      }
-      sb.append(
-          String.format(
-              "| %-20s | %,10.1f | %,15d | %15.02f | %-10s |%n",
-              formatName(planet.name()),
-              planet.diameterKm(),
-              planet.sunDistanceKm(),
-              Planet.kmToAu(planet.sunDistanceKm()),
-              formatType(planet.type())));
+    @Override
+    public String[] getHeaders() {
+        return new String[]{
+                "Nome",
+                "Diâmetro",
+                "Dist. sol (km)",
+                "Dist. sol (ua)",
+                "Tipo"
+        };
     }
-    // Borda inferior
-    sb.repeat(borderChar, BORDER_WIDTH).append("\n");
 
-    // Espaçamento
-    if (alignRight) {
-      var lines = sb.toString().split("\n");
-      for (var line : lines) {
-        System.out.println("                    " + line);
-      }
-    } else {
-      System.out.print(sb);
+    @Override
+    public int getRowCount() {
+        return planets.size();
     }
-  }
+
+    @Override
+    public String getValue(int row, int column) {
+        Planet planet = planets.get(row);
+
+        if (planet == null) {
+            return "";
+        }
+
+        return switch (column) {
+            case 0 -> formatName(planet.name());
+            case 1 -> String.format("%.1f", planet.diameterKm());
+            case 2 -> String.format("%d", planet.sunDistanceKm());
+            case 3 -> String.format(
+                    "%.2f",
+                    Planet.kmToAu(planet.sunDistanceKm())
+            );
+            case 4 -> formatType(planet.type());
+            default -> "";
+        };
+    }
+
+    private static String formatName(String name) {
+        if (name == null || name.isEmpty()) {
+            return "NÃO INFORMADO";
+        }
+
+        if (name.length() > 20) {
+            return name.substring(0, 17) + "...";
+        }
+
+        return name;
+    }
+
+    private static String formatType(PlanetType type) {
+        return switch (type) {
+            case ROCK -> "Rochoso";
+            case GAS -> "Gasoso";
+            case ICE -> "Gelado";
+            case DWARF -> "Anão";
+        };
+    }
 }
